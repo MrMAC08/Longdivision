@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Family Division - Smart Finish</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; background: #f4f4f4; padding: 20px; }
+        .container { background: white; padding: 30px; border: 3px solid #333; border-radius: 12px; width: 100%; max-width: 550px; box-shadow: 10px 10px 0px #ccc; }
+        
+        table { border-collapse: collapse; margin: 10px auto; table-layout: fixed; width: 400px; }
+        td { width: 60px; height: 65px; text-align: center; vertical-align: middle; font-size: 2.8rem; font-weight: bold; padding: 0; }
+        
+        .sign-col { width: 40px; color: #e74c3c; text-align: right; font-size: 2rem; padding-right: 5px; }
+        .roof { border-top: 6px solid black; }
+        .wall { border-right: 6px solid black; padding-right: 10px; }
+        .divisor { color: #2980b9; text-align: right; }
+        .quotient { color: #27ae60; }
+        .mummy-row { color: #e74c3c; }
+        .sub-bar { border-bottom: 6px solid black; }
+
+        .controls { font-family: sans-serif; text-align: center; margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 10px; }
+        input { font-size: 1.8rem; width: 100px; text-align: center; border: 3px solid #333; border-radius: 8px; }
+        button { font-size: 1.2rem; padding: 10px 20px; background: #2c3e50; color: white; border: none; cursor: pointer; border-radius: 8px; }
+        .instruction-box { min-height: 50px; font-weight: bold; color: #d35400; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup" style="text-align:center; font-family: sans-serif;">
+        <h2>👨‍👩‍👧‍👦 Family Division Tutor</h2>
+        <input type="number" id="in-div" placeholder="543"> ÷ <input type="number" id="in-sor" placeholder="4">
+        <br><br>
+        <button onclick="start()">Start</button>
+    </div>
+
+    <div id="math-room" style="display:none;">
+        <table id="math-table">
+            <tr id="row-q">
+                <td class="sign-col"></td><td></td>
+                <td class="quotient" id="q0"></td><td class="quotient" id="q1"></td><td class="quotient" id="q2"></td>
+            </tr>
+            <tr>
+                <td class="sign-col"></td>
+                <td class="divisor wall" id="cell-sor"></td>
+                <td class="roof" id="d0"></td><td class="roof" id="d1"></td><td class="roof" id="d2"></td>
+            </tr>
+        </table>
+
+        <div id="ui-panel" class="controls">
+            <div id="instruction" class="instruction-box"></div>
+            <input type="number" id="user-ans" autocomplete="off">
+            <button onclick="handleStep()">Check</button>
+            <div id="feedback" style="margin-top:10px; font-family:sans-serif; font-weight:bold;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let divStr, divisor, digits;
+    let step = 'D', col = 0, rem = 0, currentVal = 0, mRes = 0;
+
+    function start() {
+        divStr = document.getElementById('in-div').value;
+        divisor = parseInt(document.getElementById('in-sor').value);
+        if(divStr.length !== 3) return alert("Enter a 3-digit number!");
+        digits = divStr.split('');
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('math-room').style.display = 'block';
+        document.getElementById('cell-sor').innerText = divisor;
+        document.getElementById('d0').innerText = digits[0];
+        document.getElementById('d1').innerText = digits[1];
+        document.getElementById('d2').innerText = digits[2];
+        update();
+    }
+
+    function update() {
+        let box = document.getElementById('instruction');
+        currentVal = (rem * 10) + parseInt(digits[col]);
+        if(step === 'D') box.innerHTML = `👨‍🦱 Daddy Divide: How many ${divisor}s in ${currentVal}?`;
+        if(step === 'M') box.innerHTML = `👩‍🦰 Mummy Multiply: ${document.getElementById('q'+col).innerText} x ${divisor}?`;
+        if(step === 'S') box.innerHTML = `👧 Sister Subtract: ${currentVal} - ${mRes}?`;
+        if(step === 'B') box.innerHTML = `👶 Brother Bring Down: Move the ${digits[col+1]} down!`;
+    }
+
+    function handleStep() {
+        let val = parseInt(document.getElementById('user-ans').value);
+        let table = document.getElementById('math-table');
+        let fb = document.getElementById('feedback');
+
+        if (step === 'D') {
+            let correct = Math.floor(currentVal / divisor);
+            if (val === correct) {
+                document.getElementById('q' + col).innerText = val;
+                step = 'M';
+                fb.innerText = "Correct!"; fb.style.color = "green";
+            } else { fb.innerText = "Try again!"; fb.style.color = "red"; return; }
+        } 
+        else if (step === 'M') {
+            if (val === parseInt(document.getElementById('q'+col).innerText) * divisor) {
+                mRes = val;
+                let row = table.insertRow(-1);
+                row.className = "mummy-row";
+                row.insertCell(0).className = "sign-col";
+                row.cells[0].innerText = "-";
+
+                for(let i=1; i<5; i++) {
+                    let cell = row.insertCell(i);
+                    let mStr = mRes.toString();
+                    if(mRes < 10) { if(i === col + 2) cell.innerText = mRes; }
+                    else {
+                        if(i === col + 1) cell.innerText = mStr[0];
+                        if(i === col + 2) cell.innerText = mStr[1];
+                    }
+                }
+                step = 'S';
+                fb.innerText = "Great multiplying!";
+            } else { fb.innerText = "Check your multiply!"; return; }
+        } 
+        else if (step === 'S') {
+            if (val === currentVal - mRes) {
+                rem = val;
+                let prevRow = table.rows[table.rows.length-1];
+                for(let i=1; i<5; i++) { if(prevRow.cells[i].innerText !== "") prevRow.cells[i].classList.add("sub-bar"); }
+
+                let row = table.insertRow(-1);
+                row.insertCell(0).className = "sign-col"; 
+                for(let i=1; i<5; i++) {
+                    let cell = row.insertCell(i);
+                    if(i === col + 2) cell.innerText = rem;
+                }
+
+                // --- SMART CHECK: IS THE HOUSE EMPTY? ---
+                if (col >= digits.length - 1) {
+                    finishProblem();
+                } else {
+                    step = 'B';
+                    fb.innerText = "Subtraction success!";
+                }
+            } else { fb.innerText = "Subtract again!"; return; }
+        } 
+        else if (step === 'B') {
+            col++;
+            let lastRow = table.rows[table.rows.length-1];
+            lastRow.cells[col+2].innerText = digits[col];
+            step = 'D';
+        }
+        document.getElementById('user-ans').value = "";
+        update();
+    }
+
+    function finishProblem() {
+        if(rem > 0) {
+            document.getElementById('q2').innerHTML += `<span style="font-size:1.8rem; color:#8e44ad; margin-left:10px;">r${rem}</span>`;
+        }
+        document.getElementById('instruction').innerText = "All done! Great work.";
+        document.getElementById('feedback').innerText = (rem === 0) ? "Perfect! No remainder." : "Finished with a remainder of " + rem;
+        document.getElementById('user-ans').style.display = 'none';
+        document.querySelector('button[onclick="handleStep()"]').style.display = 'none';
+    }
+</script>
+</body>
+</html>
